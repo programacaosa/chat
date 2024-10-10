@@ -7,95 +7,101 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
+            background-color: #f4f4f4;
         }
-        .chat-container {
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-        }
-        .messages {
-            max-height: 400px;
-            overflow-y: auto;
+        #chat {
             margin-bottom: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
         }
-        .input-group {
-            display: flex;
+        #messages {
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .user-message {
+            color: blue;
+        }
+        .bot-response {
+            color: green;
         }
         input[type="text"] {
-            flex: 1;
+            width: calc(100% - 22px);
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
         button {
-            padding: 10px 15px;
-            margin-left: 10px;
+            padding: 10px;
+            background: #5c85d6;
             border: none;
             border-radius: 5px;
-            background-color: #28a745;
             color: white;
             cursor: pointer;
-        }
-        button:hover {
-            background-color: #218838;
         }
     </style>
 </head>
 <body>
 
-<div class="chat-container">
-    <h2>Chat com API</h2>
-    <div class="messages" id="messages"></div>
-    <div class="input-group">
-        <input type="text" id="userInput" placeholder="Digite sua mensagem...">
-        <button onclick="sendMessage()">Enviar</button>
-    </div>
+<h1>Chat com API</h1>
+<div id="chat">
+    <div id="messages"></div>
+    <input type="text" id="userInput" placeholder="Digite sua mensagem..." />
+    <button id="sendButton">Enviar</button>
 </div>
 
 <script>
-    async function sendMessage() {
-        const userInput = document.getElementById('userInput');
-        const messagesDiv = document.getElementById('messages');
-        const userMessage = userInput.value;
+    const sendButton = document.getElementById('sendButton');
+    const userInput = document.getElementById('userInput');
+    const messagesDiv = document.getElementById('messages');
 
+    sendButton.addEventListener('click', function() {
+        const userMessage = userInput.value;
         if (!userMessage) return;
 
-        // Adiciona a mensagem do usuário na área de mensagens
-        messagesDiv.innerHTML += `<div><strong>Você:</strong> ${userMessage}</div>`;
+        // Adiciona a mensagem do usuário na tela
+        messagesDiv.innerHTML += `<div class="user-message">Você: ${userMessage}</div>`;
         userInput.value = '';
 
-        // Faz a requisição à API (via PHP)
-        try {
-            const response = await fetch('api.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ content: userMessage })
-            });
+        const data = JSON.stringify({
+            messages: [
+                {
+                    role: 'user',
+                    content: userMessage
+                }
+            ],
+            genere: 'ai-gf-1',
+            bot_name: '',
+            temperature: 0.9,
+            top_k: 10,
+            top_p: 0.9,
+            max_tokens: 200
+        });
 
-            if (!response.ok) {
-                throw new Error('Erro na requisição à API');
+        const xhr = new XMLHttpRequest();
+        xhr.withCredentials = true;
+
+        xhr.addEventListener('readystatechange', function () {
+            if (this.readyState === this.DONE) {
+                const response = JSON.parse(this.responseText);
+                const botResponse = response.messages[0].content; // Ajuste de acordo com a resposta da API
+
+                // Adiciona a resposta do bot na tela
+                messagesDiv.innerHTML += `<div class="bot-response">Bot: ${botResponse}</div>`;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight; // Rola para o final
             }
+        });
 
-            const data = await response.json();
+        xhr.open('POST', 'https://adult-gpt.p.rapidapi.com/adultgpt');
+        xhr.setRequestHeader('x-rapidapi-key', '78bed8bd1amsh5891935fc1437bcp172f37jsnffe0b1b4f9c6');
+        xhr.setRequestHeader('x-rapidapi-host', 'adult-gpt.p.rapidapi.com');
+        xhr.setRequestHeader('Content-Type', 'application/json');
 
-            // Adiciona a resposta da API na área de mensagens
-            messagesDiv.innerHTML += `<div><strong>API:</strong> ${data.response}</div>`;
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Rola para baixo
-        } catch (error) {
-            messagesDiv.innerHTML += `<div><strong>Erro:</strong> ${error.message}</div>`;
-        }
-    }
+        xhr.send(data);
+    });
 </script>
 
 </body>
