@@ -86,11 +86,22 @@
 
         xhr.addEventListener('readystatechange', function () {
             if (this.readyState === this.DONE) {
-                const response = JSON.parse(this.responseText);
-                const botResponse = response.messages[0].content; // Ajuste de acordo com a resposta da API
+                try {
+                    const response = JSON.parse(this.responseText);
 
-                // Adiciona a resposta do bot na tela
-                messagesDiv.innerHTML += `<div class="bot-response">Bot: ${botResponse}</div>`;
+                    // Verifica se a estrutura da resposta é válida
+                    if (response.messages && response.messages.length > 0) {
+                        const botResponse = response.messages[0].content;
+                        messagesDiv.innerHTML += `<div class="bot-response">Bot: ${botResponse}</div>`;
+                    } else {
+                        // Caso a resposta não tenha o formato esperado
+                        messagesDiv.innerHTML += `<div class="bot-response">Bot: Desculpe, não consegui entender sua mensagem.</div>`;
+                    }
+                } catch (e) {
+                    // Se houve um erro ao analisar a resposta
+                    console.error('Erro ao analisar a resposta da API:', e);
+                    messagesDiv.innerHTML += `<div class="bot-response">Bot: Ocorreu um erro na comunicação com o servidor.</div>`;
+                }
                 messagesDiv.scrollTop = messagesDiv.scrollHeight; // Rola para o final
             }
         });
